@@ -11,12 +11,8 @@ if (!isset($_SESSION['admin_id']) || !isset($_SESSION['admin_role'])) {
     exit();
 }
 
-// 3. Bring in your database connection parameters
-// Database Connection Parameters
-$host     = 'localhost';
-$db_name  = 'EQUAL-gatepass';
-$username = 'EQUAL-gatepass';
-$password = 'EQUAL-gatepass1972$$';  // Single quotes = no variable parsing 'inc/conn.php';
+// 3. Database Connection Parameters
+include_once './inc/conn.php';
 
 // Safe PDO connection wrapper block
 if (!isset($pdo)) {
@@ -38,11 +34,7 @@ if (!isset($pdo)) {
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     // Capture user details from active session
-    $user_id   = (int)$_SESSION['admin_id'];
-    $user_role = strtolower(trim($_SESSION['admin_role'])); // 'hr' or 'security'
-
-    // Map database table based on role
-    $target_table = ($user_role === 'hr') ? 'hr' : 'security';
+    $user_id = (int)$_SESSION['admin_id'];
 
     // Capture and clean form inputs
     $profile_name  = trim($_POST['profile_name'] ?? '');
@@ -64,8 +56,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     try {
-        // Check for duplicate emails
-        $email_check_stmt = $pdo->prepare("SELECT id FROM {$target_table} WHERE email = ? AND id != ? LIMIT 1");
+        // Check for duplicate emails in the admin table
+        $email_check_stmt = $pdo->prepare("SELECT id FROM admin WHERE email = ? AND id != ? LIMIT 1");
         $email_check_stmt->execute([$profile_email, $user_id]);
 
         if ($email_check_stmt->fetch()) {
@@ -96,13 +88,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 exit();
             }
 
-            // ⚠️ WARNING: Saving the password completely raw (unhashed) as requested
+            // Saving the password raw (unhashed) as requested into the admin table
             $sql_password_update = ", password = :password";
             $params[':password'] = $new_password;
         }
 
-        // 6. Execute the update query
-        $update_sql = "UPDATE {$target_table} 
+        // 6. Execute the update query targeting the 'admin' table
+        $update_sql = "UPDATE admin 
                        SET name = :name, 
                            email = :email 
                            {$sql_password_update} 

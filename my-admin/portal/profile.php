@@ -345,8 +345,24 @@ session_start();
                       <span>Profile Settings</span>
                     </h2>
                     <p class="text-muted mb-0 small">Update your account profile, email credentials, and login passwords.</p>
+
                   </div>
                 </div>
+                <?php if (isset($_SESSION['success_message'])): ?>
+                  <div class="alert alert-success alert-dismissible fade show" role="alert">
+                    <i class="bi bi-check-circle-fill me-2"></i> <?php echo $_SESSION['success_message'];
+                                                                  unset($_SESSION['success_message']); ?>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                  </div>
+                <?php endif; ?>
+
+                <?php if (isset($_SESSION['error_message'])): ?>
+                  <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                    <i class="bi bi-exclamation-triangle-fill me-2"></i> <?php echo $_SESSION['error_message'];
+                                                                          unset($_SESSION['error_message']); ?>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                  </div>
+                <?php endif; ?>
 
                 <div class="row g-3">
                   <!-- Name Field -->

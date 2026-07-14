@@ -427,7 +427,7 @@ $current_admin_role = $_SESSION['admin_role'];
                               // Strip out stray leading slashes and format the string uniformly
                               $clean_row_path = ltrim(str_replace('\\', '/', $row['passport_photo_url']), '/');
                               // Construct the absolute path working for your local environment
-                              $table_image_src = "http://localhost/Equal-gatepass/" . $clean_row_path;
+                              $table_image_src = "http://localhost/gate-pass/" . $clean_row_path;
                               ?>
                               <img class="avatar-img avatar-sm rounded-circle" src="<?php echo htmlspecialchars($table_image_src); ?>" alt="<?php echo htmlspecialchars($row['staff_name']); ?>" style="width:36px; height:36px; object-fit:cover;">
                             <?php else: ?>

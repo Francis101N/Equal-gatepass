@@ -1,114 +1,128 @@
 <?php
-// Start session for processing alerts feedback systems at the absolute top
+// 1. Initialize safe session tracking at the very top
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
-// 1. Authentication Guard Validation Check
-if (!isset($_SESSION['admin_role']) || !isset($_SESSION['admin_id'])) {
-    $_SESSION['error_message'] = "Access Denied: Please log in to edit system account parameters.";
+// 2. Authentication Guard Check
+if (!isset($_SESSION['admin_id']) || !isset($_SESSION['admin_role'])) {
+    $_SESSION['error_message'] = "Access Denied: Please log in to complete this action.";
     header("Location: login.php");
-    exit;
+    exit();
 }
 
-// 2. Pull environment configuration map metrics
-include 'inc/conn.php';
+// 3. Bring in your database connection parameters
+// Database Connection Parameters
+$host     = 'localhost';
+$db_name  = 'EQUAL-gatepass';
+$username = 'EQUAL-gatepass';
+$password = 'EQUAL-gatepass1972$$';  // Single quotes = no variable parsing 'inc/conn.php';
 
-try {
-    $pdo = new PDO("mysql:host=$host;dbname=$db_name;charset=utf8mb4", $username, $password, [
-        PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
-        PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-        PDO::ATTR_EMULATE_PREPARES => false,
-    ]);
-} catch (PDOException $e) {
-    error_log("Database Error: " . $e->getMessage());
-    die("Critical Error: Unable to connect safely to processing layers.");
+// Safe PDO connection wrapper block
+if (!isset($pdo)) {
+    try {
+        $pdo = new PDO("mysql:host=$host;dbname=$db_name;charset=utf8mb4", $username, $password, [
+            PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+            PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+            PDO::ATTR_EMULATE_PREPARES => false,
+        ]);
+    } catch (PDOException $e) {
+        error_log("Database connection failed: " . $e->getMessage());
+        $_SESSION['error_message'] = "System Error: Connection to the database could not be established.";
+        header("Location: profile.php");
+        exit();
+    }
 }
 
-// 3. Capture Action Payload Form Post Inputs
+// 4. Process ONLY on POST requests
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
-    // Retrieve dynamic state tracking properties from active authorization tokens
+    // Capture user details from active session
     $user_id   = (int)$_SESSION['admin_id'];
     $user_role = strtolower(trim($_SESSION['admin_role'])); // 'hr' or 'security'
 
-    // Map targets to their respective database structure tables cleanly
+    // Map database table based on role
     $target_table = ($user_role === 'hr') ? 'hr' : 'security';
 
-    // Capture text variations safely
+    // Capture and clean form inputs
     $profile_name  = trim($_POST['profile_name'] ?? '');
     $profile_email = filter_var(trim($_POST['profile_email'] ?? ''), FILTER_VALIDATE_EMAIL);
     $new_password  = $_POST['profile_password'] ?? '';
     $conf_password = $_POST['confirm_password'] ?? '';
 
-    // Enforce basic baseline parameter structures
-    if (empty($profile_name) || !$profile_email) {
-        $_SESSION['error_message'] = "Validation Error: Please fill out all structural target fields with valid formats.";
-        header("Location: profile.php"); // Point back to your profile configuration template file
-        exit;
+    // Validation check
+    if (empty($profile_name)) {
+        $_SESSION['error_message'] = "Validation Error: Name cannot be empty.";
+        header("Location: profile.php");
+        exit();
+    }
+
+    if (!$profile_email) {
+        $_SESSION['error_message'] = "Validation Error: Please enter a valid email address.";
+        header("Location: profile.php");
+        exit();
     }
 
     try {
-        // Prevent email duplication conflicts across other rows within the designated table mapping
-        $dup_stmt = $pdo->prepare("SELECT id FROM {$target_table} WHERE email = ? AND id != ? LIMIT 1");
-        $dup_stmt->execute([$profile_email, $user_id]);
-        if ($dup_stmt->fetch()) {
-            $_SESSION['error_message'] = "Conflict Error: This email address is currently allocated to another administrator asset profile registration row.";
+        // Check for duplicate emails
+        $email_check_stmt = $pdo->prepare("SELECT id FROM {$target_table} WHERE email = ? AND id != ? LIMIT 1");
+        $email_check_stmt->execute([$profile_email, $user_id]);
+
+        if ($email_check_stmt->fetch()) {
+            $_SESSION['error_message'] = "Error: This email address is already in use.";
             header("Location: profile.php");
-            exit;
+            exit();
         }
 
-        // Initialize our basic baseline SQL execution variables
-        $update_password_string = "";
-        $query_parameters = [
+        // Initialize SQL update parts
+        $sql_password_update = "";
+        $params = [
             ':name'  => $profile_name,
             ':email' => $profile_email,
             ':id'    => $user_id
         ];
 
-        // 4. Validate and append password fields dynamically if the user wants to update them
+        // 5. If the user typed a new password, validate it and save it raw
         if (!empty($new_password)) {
-            // Enforce explicit minimum password metrics length criteria checks
             if (strlen($new_password) < 6) {
-                $_SESSION['error_message'] = "Security Exception: Your updated account password parameter length must consist of at least 6 characters.";
+                $_SESSION['error_message'] = "Error: Password must be at least 6 characters long.";
                 header("Location: profile.php");
-                exit;
+                exit();
             }
 
-            // Enforce structural equality parameters matching
             if ($new_password !== $conf_password) {
-                $_SESSION['error_message'] = "Validation Error: The structural passwords provided inside tracking matrices do not match.";
+                $_SESSION['error_message'] = "Error: New password and confirmation password do not match.";
                 header("Location: profile.php");
-                exit;
+                exit();
             }
 
-            // Hash the password cleanly with native high-security parameters
-            $update_password_string = ", password = :password";
-            $query_parameters[':password'] = password_hash($new_password, PASSWORD_DEFAULT);
+            // ⚠️ WARNING: Saving the password completely raw (unhashed) as requested
+            $sql_password_update = ", password = :password";
+            $params[':password'] = $new_password;
         }
 
-        // 5. Run Database Setup Writes
+        // 6. Execute the update query
         $update_sql = "UPDATE {$target_table} 
-                       SET name  = :name, 
+                       SET name = :name, 
                            email = :email 
-                           {$update_password_string} 
-                       WHERE id  = :id";
+                           {$sql_password_update} 
+                       WHERE id = :id";
 
         $update_stmt = $pdo->prepare($update_sql);
-        $update_stmt->execute($query_parameters);
+        $update_stmt->execute($params);
 
-        // 6. Keep layout session variables completely in sync with database records immediately
+        // 7. Success! Sync the active session details
         $_SESSION['admin_name']  = $profile_name;
         $_SESSION['admin_email'] = $profile_email;
 
-        $_SESSION['success_message'] = "Success: System authentication account records updated successfully.";
+        $_SESSION['success_message'] = "Profile settings updated successfully!";
         header("Location: profile.php");
-        exit;
+        exit();
     } catch (Exception $e) {
-        error_log("Profile Infrastructure Settings Update Failure: " . $e->getMessage());
-        $_SESSION['error_message'] = "Database Processing Exception: Internal database problems interrupted modifications records updates logs.";
+        error_log("Profile Update Failure: " . $e->getMessage());
+        $_SESSION['error_message'] = "System Error: Something went wrong while saving changes.";
         header("Location: profile.php");
-        exit;
+        exit();
     }
 } else {
     header("Location: profile.php");

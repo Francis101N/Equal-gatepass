@@ -501,24 +501,29 @@ $current_admin_role = $_SESSION['admin_role'];
                   <?php
                   // Check if current user is security
                   $is_security = (isset($_SESSION['admin_role']) && $_SESSION['admin_role'] === 'security');
+
+                  // Status evaluation for dropdown selection
+                  $status = strtolower(trim($pass_data['approved_status'] ?? ''));
                   ?>
 
                   <div class="row g-3">
+                    <!-- HR Decision Status -->
                     <div class="col-md-6">
                       <label for="approved_status" class="form-label small fw-semibold text-dark">Review Action Decision</label>
                       <!-- Disabled for security so they cannot modify HR decisions -->
-                      <select class="form-select form-select-sm" name="approved_status" id="approved_status" required <?php echo $is_security ? 'disabled' : ''; ?>>
-                        <option value="" disabled <?php echo empty($pass_data['approved_status']) ? 'selected' : ''; ?>>-- Choose Status --</option>
+                      <select class="form-select form-select-sm" name="approval_status" id="approved_status" required <?php echo $is_security ? 'disabled' : ''; ?>>
+                        <option value="" disabled <?php echo empty($pass_data['approval_status']) ? 'selected' : ''; ?>>-- Choose Status --</option>
                         <option value="Approved" <?php echo ($status === 'approved') ? 'selected' : ''; ?>>Approved</option>
                         <option value="Declined" <?php echo ($status === 'declined' || $status === 'denied') ? 'selected' : ''; ?>>Declined</option>
                         <option value="Request to See Person" <?php echo ($status === 'request to see person') ? 'selected' : ''; ?>>Hold - Request to See Person</option>
                       </select>
                       <?php if ($is_security): ?>
                         <!-- Hidden input preserves the value in the form submission because disabled inputs are ignored by POST -->
-                        <input type="hidden" name="approved_status" value="<?php echo htmlspecialchars($pass_data['approved_status'] ?? ''); ?>">
+                        <input type="hidden" name="approval_status" value="<?php echo htmlspecialchars($pass_data['approval_status'] ?? ''); ?>">
                       <?php endif; ?>
                     </div>
 
+                    <!-- Reviewer Identity -->
                     <div class="col-md-6">
                       <label for="hr_reviewed_by" class="form-label small fw-semibold text-dark">Reviewer Identity</label>
                       <input type="text" class="form-control form-control-sm" name="hr_reviewed_by" id="hr_reviewed_by" placeholder="e.g. HR Officer" value="<?php echo htmlspecialchars($pass_data['hr_reviewed_by'] ?? ''); ?>" required <?php echo $is_security ? 'disabled' : ''; ?>>
@@ -528,18 +533,20 @@ $current_admin_role = $_SESSION['admin_role'];
                     </div>
 
                     <?php
-                    $isApproved = (
-                      isset($pass_data['approval_status']) &&
-                      strtolower(trim($pass_data['approval_status'])) === 'approved'
-                    );
+                    // Check if HR has approved it (Check either approval_status or approved_status depending on DB structure)
+                    $approvalState = $pass_data['approved_status'] ?? $pass_data['approval_status'] ?? '';
+                    $isApproved = (strtolower(trim($approvalState)) === 'approved');
                     ?>
 
                     <?php if ($is_security): ?>
 
+                      <!-- SECURITY VIEW: Actual Time Out -->
                       <div class="col-md-6">
                         <label for="time_out" class="form-label small fw-semibold text-dark">
                           Actual Time Out
                         </label>
+
+                        <?php $isTimeOutSaved = !empty($pass_data['time_out']); ?>
 
                         <div class="input-group input-group-sm">
                           <input
@@ -548,30 +555,46 @@ $current_admin_role = $_SESSION['admin_role'];
                             name="time_out"
                             id="time_out"
                             value="<?php echo htmlspecialchars($pass_data['time_out'] ?? ''); ?>"
-                            <?php echo $isApproved ? '' : 'disabled'; ?>
-                            <?php echo $isApproved ? 'required' : ''; ?>>
+                            <?php
+                            if (!$isApproved) {
+                              echo 'disabled';
+                            } elseif ($isTimeOutSaved) {
+                              echo 'readonly style="background-color: #e9ecef; cursor: not-allowed;"';
+                            } else {
+                              echo 'required';
+                            }
+                            ?>>
 
                           <button
                             class="btn btn-outline-secondary"
                             type="button"
                             onclick="document.getElementById('time_out').value=new Date().toTimeString().slice(0,5);"
-                            <?php echo $isApproved ? '' : 'disabled'; ?>>
+                            <?php echo ($isApproved && !$isTimeOutSaved) ? '' : 'disabled'; ?>>
                             Now
                           </button>
                         </div>
 
                         <?php if (!$isApproved): ?>
-                          <small class="text-danger">
+                          <small class="text-danger d-block mt-1">
                             <i class="bi bi-lock-fill"></i>
                             Time Out can only be recorded after HR approves this gate pass.
                           </small>
+                        <?php elseif ($isTimeOutSaved): ?>
+                          <small class="text-success d-block mt-1">
+                            <i class="bi bi-check-circle-fill"></i>
+                            Time Out recorded and locked.
+                          </small>
+                          <input type="hidden" name="time_out" value="<?php echo htmlspecialchars($pass_data['time_out']); ?>">
                         <?php endif; ?>
                       </div>
 
+                      <!-- SECURITY VIEW: Actual Time In -->
                       <div class="col-md-6">
                         <label for="time_in" class="form-label small fw-semibold text-dark">
                           Actual Time In
                         </label>
+
+                        <?php $isTimeInSaved = !empty($pass_data['expected_time_in']); ?>
 
                         <div class="input-group input-group-sm">
                           <input
@@ -579,23 +602,35 @@ $current_admin_role = $_SESSION['admin_role'];
                             class="form-control"
                             name="time_in"
                             id="time_in"
-                            value="<?php echo htmlspecialchars($pass_data['time_in'] ?? ''); ?>"
-                            <?php echo $isApproved ? '' : 'disabled'; ?>>
+                            value="<?php echo htmlspecialchars($pass_data['expected_time_in'] ?? ''); ?>"
+                            <?php
+                            if (!$isApproved) {
+                              echo 'disabled';
+                            } elseif ($isTimeInSaved) {
+                              echo 'readonly style="background-color: #e9ecef; cursor: not-allowed;"';
+                            }
+                            ?>>
 
                           <button
                             class="btn btn-outline-secondary"
                             type="button"
                             onclick="document.getElementById('time_in').value=new Date().toTimeString().slice(0,5);"
-                            <?php echo $isApproved ? '' : 'disabled'; ?>>
+                            <?php echo ($isApproved && !$isTimeInSaved) ? '' : 'disabled'; ?>>
                             Now
                           </button>
                         </div>
 
                         <?php if (!$isApproved): ?>
-                          <small class="text-danger">
+                          <small class="text-danger d-block mt-1">
                             <i class="bi bi-lock-fill"></i>
                             Time In becomes available after HR approval.
                           </small>
+                        <?php elseif ($isTimeInSaved): ?>
+                          <small class="text-success d-block mt-1">
+                            <i class="bi bi-check-circle-fill"></i>
+                            Time In recorded and locked.
+                          </small>
+                          <input type="hidden" name="time_in" value="<?php echo htmlspecialchars($pass_data['time_in']); ?>">
                         <?php endif; ?>
                       </div>
 
@@ -607,10 +642,11 @@ $current_admin_role = $_SESSION['admin_role'];
                       </div>
                       <div class="col-md-6">
                         <label class="form-label small fw-semibold text-muted">Actual Time In (Logged by Security)</label>
-                        <input type="text" class="form-control form-control-sm bg-light" value="<?php echo !empty($pass_data['expected_time_in']) ? htmlspecialchars($pass_data['expected_time_in']) : 'Not returned yet'; ?>" disabled>
+                        <input type="text" class="form-control form-control-sm bg-light" value="<?php echo !empty($pass_data['time_in']) ? htmlspecialchars($pass_data['time_in']) : 'Not returned yet'; ?>" disabled>
                       </div>
                     <?php endif; ?>
 
+                    <!-- HR Remarks -->
                     <div class="col-12">
                       <label for="hr_remarks" class="form-label small fw-semibold text-dark">HR Review Notes & Remarks</label>
                       <textarea class="form-control form-control-sm" name="hr_remarks" id="hr_remarks" rows="2" placeholder="Provide operational context regarding this entry check..." required <?php echo $is_security ? 'disabled' : ''; ?>><?php echo htmlspecialchars($pass_data['hr_remarks'] ?? ''); ?></textarea>
@@ -619,16 +655,22 @@ $current_admin_role = $_SESSION['admin_role'];
                       <?php endif; ?>
                     </div>
 
+                    <!-- Submit Button -->
                     <div class="col-12 text-end">
+                      <?php
+                      // If user is security, and HR hasn't approved yet, OR if both timestamps are already saved, hide/disable the update button so they aren't confused
+                      $disableSecurityUpdate = ($is_security && !$isApproved) || ($is_security && $isTimeOutSaved && $isTimeInSaved);
+                      ?>
                       <button
                         type="submit"
                         class="btn btn-brand-primary btn-sm fw-medium"
-                        <?php echo ($is_security && !$isApproved) ? 'disabled' : ''; ?>>
-                        <i class="bi bi-save"></i> Update
+                        <?php echo $disableSecurityUpdate ? 'disabled' : ''; ?>>
+                        <i class="bi bi-save"></i> <?php echo $disableSecurityUpdate ? 'Fully Logged' : 'Update'; ?>
                       </button>
                     </div>
                   </div>
                 </form>
+
               </div>
 
               <!-- HR Review Audit Logs History Overview -->

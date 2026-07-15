@@ -401,7 +401,7 @@ $current_admin_role = $_SESSION['admin_role'];
                                                     </p>
                                                 </td>
                                                 <td class="text-end">
-                                                    <a class="btn btn-light btn-sm border" href="hr-details.php?id=<?php echo base64_encode($row['id']); ?>">Edit Profile</a>
+                                                    <a class="btn btn-light btn-sm border" href="hr-details?id=<?php echo base64_encode($row['id']); ?>">Edit Profile</a>
                                                 </td>
                                             </tr>
                                         <?php endforeach; ?>

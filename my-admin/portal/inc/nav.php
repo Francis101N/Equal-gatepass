@@ -5,7 +5,7 @@ $current_page = basename($_SERVER['SCRIPT_NAME']);
 
 <nav class="sidebar-nav">
     <a class="nav-link <?php echo ($current_page === 'dashboard.php') ? 'active' : ''; ?>"
-        href="dashboard.php"
+        href="dashboard"
         <?php echo ($current_page === 'dashboard.php') ? 'aria-current="page"' : ''; ?>>
         <span class="nav-icon"><i class="bi bi-speedometer2" aria-hidden="true"></i></span>
         <span class="nav-text">Dashboard</span>
@@ -13,7 +13,7 @@ $current_page = basename($_SERVER['SCRIPT_NAME']);
 
     <!-- This highlights 'Requests' on requests.php AND when viewing an individual pass-details page -->
     <a class="nav-link <?php echo ($current_page === 'requests.php' || $current_page === 'pass-details.php') ? 'active' : ''; ?>"
-        href="requests.php"
+        href="requests"
         <?php echo ($current_page === 'requests.php' || $current_page === 'pass-details.php') ? 'aria-current="page"' : ''; ?>>
         <span class="nav-icon"><i class="bi bi-people" aria-hidden="true"></i></span>
         <span class="nav-text">Requests</span>
@@ -21,7 +21,7 @@ $current_page = basename($_SERVER['SCRIPT_NAME']);
 
     <?php if (isset($_SESSION['admin_role']) && $_SESSION['admin_role'] === 'hr'): ?>
         <a class="nav-link <?php echo ($current_page === 'hr.php') ? 'active' : ''; ?>"
-            href="hr.php"
+            href="hr"
             <?php echo ($current_page === 'hr.php') ? 'aria-current="page"' : ''; ?>>
             <span class="nav-icon"><i class="bi bi-person-plus" aria-hidden="true"></i></span>
             <span class="nav-text">HR</span>
@@ -30,7 +30,7 @@ $current_page = basename($_SERVER['SCRIPT_NAME']);
 
     <?php if (isset($_SESSION['admin_role']) && $_SESSION['admin_role'] === 'hr'): ?>
         <a class="nav-link <?php echo ($current_page === 'security.php') ? 'active' : ''; ?>"
-            href="security.php"
+            href="security"
             <?php echo ($current_page === 'security.php') ? 'aria-current="page"' : ''; ?>>
             <span class="nav-icon"><i class="bi bi-person-plus" aria-hidden="true"></i></span>
             <span class="nav-text">Security</span>
@@ -38,7 +38,7 @@ $current_page = basename($_SERVER['SCRIPT_NAME']);
     <?php endif; ?>
 
     <a class="nav-link <?php echo ($current_page === 'profile.php') ? 'active' : ''; ?>"
-        href="profile.php"
+        href="profile"
         <?php echo ($current_page === 'profile.php') ? 'aria-current="page"' : ''; ?>>
         <span class="nav-icon"><i class="bi bi-person-badge" aria-hidden="true"></i></span>
         <span class="nav-text">Profile</span>

@@ -20,7 +20,7 @@ $current_admin_role = $_SESSION['admin_role'];
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="adminHMD professional admin dashboard template">
-    <title>Security | Equal Gate-Pass </title>
+    <title>Requests | Equal Gate-Pass </title>
 
     <link rel="stylesheet" href="../assets/css/bootstrap.min.css">
     <link rel="stylesheet" href="../assets/vendors/bootstrap-icons/bootstrap-icons.css">
@@ -72,7 +72,6 @@ $current_admin_role = $_SESSION['admin_role'];
             <?php
             include 'inc/nav.php';
             ?>
-
             <div class="sidebar-user-panel d-flex align-items-center gap-3 p-3 my-3 m-4 rounded-4 shadow-sm"
                 style="background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%); border: 1px solid rgba(226, 232, 240, 0.8);">
 
@@ -250,29 +249,11 @@ $current_admin_role = $_SESSION['admin_role'];
                             }
                         </style>
 
-                        <div class="page-heading-copy">
-                            <!-- Icon changed to person-plus for user addition context -->
-                            <span class="page-icon"><i class="bi bi-person-plus" aria-hidden="true"></i></span>
-                            <div>
-                                <p class="eyebrow mb-1">Internal Operations</p>
-                                <h1 class="h3 mb-1">Add New Security User</h1>
-                                <p class="text-muted mb-0">Create administrative accounts to manage and evaluate gate pass requests for specific office branches.</p>
-                            </div>
-                        </div>
-                        <div class="heading-actions">
-
-                            <a class="btn btn-outline-secondary btn-sm" href="add-security.php">
-                                <i class="bi bi-person-plus" aria-hidden="true"></i> ADD SECURITY USER
-                            </a>
-                        </div>
                     </div>
 
                     <?php
-                    // 1. Establish Secure Connection Parameters
-                    $host     = 'localhost';
-                    $db_name  = 'EQUAL-gatepass';
-                    $username = 'EQUAL-gatepass';
-                    $password = 'EQUAL-gatepass1972$$';
+
+                    include('inc/conn.php');
 
                     try {
                         $pdo = new PDO("mysql:host=$host;dbname=$db_name;charset=utf8mb4", $username, $password, [
@@ -281,18 +262,16 @@ $current_admin_role = $_SESSION['admin_role'];
                             PDO::ATTR_EMULATE_PREPARES => false,
                         ]);
 
-                        // 2. Query Total Count for HR Directory Analytics
-                        $total_stmt = $pdo->query("SELECT COUNT(*) FROM hr");
+                        // 2. Query Total Count for Database Summary Analytics
+                        $total_stmt = $pdo->query("SELECT COUNT(*) FROM gate_passes WHERE approval_status = 'Declined'");
                         $total_records = $total_stmt->fetchColumn();
 
-                        // 3. Fetch Security User Records (ordered by newest onboarded members first)
-                        $stmt = $pdo->query("SELECT id, name, branch, email, phone, passport, date_created FROM security ORDER BY date_created DESC");
-
-                        // Assigned to match the $security_table variable loop in your frontend template code block
-                        $security_table = $stmt->fetchAll();
+                        // 3. Fetch Gate Pass Logs (ordered by newest additions first)
+                        $stmt = $pdo->query("SELECT id, verification_id, passport_photo_url, staff_name, department, pass_date, destination, branch, purpose_of_exit, time_out, expected_time_in, signature_initials, approval_status, hr_reviewed_by, hr_remarks, date_created FROM gate_passes WHERE approval_status = 'Declined' ORDER BY date_created DESC");
+                        $gate_passes = $stmt->fetchAll();
                     } catch (PDOException $e) {
                         echo "<div class='alert alert-danger'>Database Terminal Connectivity Error: " . htmlspecialchars($e->getMessage()) . "</div>";
-                        $security_table = [];
+                        $gate_passes = [];
                         $total_records = 0;
                     }
                     ?>
@@ -343,72 +322,116 @@ $current_admin_role = $_SESSION['admin_role'];
 
                         <div class="panel-header">
                             <div>
-                                <h2 class="h5 mb-1 section-title"><i class="bi bi-people" aria-hidden="true"></i><span> Security Management Directory</span></h2>
-                                <p class="text-muted mb-0">Search, view, and manage authorized system administrators across all offices.</p>
+                                <h1 class="h5 mb-1 section-title"><i class="bi bi-table" aria-hidden="true"></i><span> Gate-Pass Declined Requests Log</span></h1>
+                                <p class="text-muted mb-0">Search, review, and manage active terminal pass clearances.</p>
                             </div>
                             <div class="d-flex flex-wrap gap-2">
-                                <input class="form-control form-control-sm table-search" type="search" placeholder="Search Security users..." data-table-search="securityManagersTable" aria-label="Search Security users">
-                                <!-- <a class="btn btn-brand-action btn-sm fw-medium" href="add-hr.php"><i class="bi bi-person-plus" aria-hidden="true"></i> Add New HR</a> -->
+                                <input class="form-control form-control-sm table-search" type="search" placeholder="Search gate passes..." data-table-search="gatePassesTable" aria-label="Search gate passes">
+                                <!-- <a class="btn btn-brand-action btn-sm fw-medium" href="add-user.html"><i class="bi bi-plus-circle" aria-hidden="true"></i> Issue New Pass</a> -->
                             </div>
                         </div>
 
                         <div class="table-responsive">
-                            <table class="table align-middle mb-0" id="securityManagersTable" data-searchable-table>
+                            <table class="table align-middle mb-0" id="gatePassesTable" data-searchable-table>
                                 <thead>
                                     <tr>
-                                        <th scope="col">Security Administrator Details</th>
-                                        <th scope="col">Branch Location</th>
-                                        <th scope="col">Contact</th>
-                                        <th scope="col">Date Added</th>
+                                        <th scope="col">Personnel Details</th>
+                                        <th scope="col">Verification ID</th>
+                                        <th scope="col">Destination / Branch</th>
+                                        <th scope="col">Purpose / Timing</th>
+                                        <th scope="col">HR Review Status</th>
                                         <th scope="col" class="text-end">Action</th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    <?php if (!empty($security_table)): ?>
-                                        <?php foreach ($security_table as $row): ?>
+                                    <?php if (!empty($gate_passes)): ?>
+                                        <?php foreach ($gate_passes as $row):
+                                            // Process the Status Badges
+                                            $status = strtolower(trim($row['approval_status']));
+
+                                            if ($status === 'approved' || $status === 'active') {
+                                                // Approved color remains Green (Success)
+                                                $status_badge = '<span class="badge text-bg-success">Approved</span>';
+                                            } elseif ($status === 'pending') {
+                                                // Pending remains Yellow/Orange (Warning)
+                                                $status_badge = '<span class="badge text-bg-warning">Pending</span>';
+                                            } elseif ($status === 'Declined' || $status === 'denied') {
+                                                // Declined & Denied updated to Yellow/Orange (Warning)
+                                                $status_badge = '<span class="badge text-bg-warning">' . htmlspecialchars($row['approval_status']) . '</span>';
+                                            } elseif ($status === 'request to see person') {
+                                                // Request to See Person updated to Light Blue (Info)
+                                                $status_badge = '<span class="badge text-bg-info">Request to See Person</span>';
+                                            } else {
+                                                // Fallback for empty or unique alternative states (Red Danger)
+                                                $status_badge = '<span class="badge text-bg-danger">' . (!empty($row['approval_status']) ? htmlspecialchars($row['approval_status']) : 'Declined') . '</span>';
+                                            }
+                                        ?>
                                             <tr>
                                                 <td>
                                                     <div class="d-flex align-items-center gap-2">
-                                                        <?php if (!empty($row['passport'])): ?>
+                                                        <?php if (!empty($row['passport_photo_url'])): ?>
+
                                                             <?php
-                                                            // Strip out stray leading slashes and format the layout string uniformly
-                                                            $clean_row_path = ltrim(str_replace('\\', '/', $row['passport']), '/');
+
+                                                            // Strip out stray leading slashes and format the string uniformly
+
+                                                            $clean_row_path = ltrim(str_replace('\\', '/', $row['passport_photo_url']), '/');
+
+                                                            // Construct the absolute path working for your local environment
+
+                                                            $table_image_src = "http://localhost/gate-pass/" . $clean_row_path;
+
                                                             ?>
-                                                            <img class="avatar-img avatar-sm rounded-circle" src="<?php echo htmlspecialchars($clean_row_path, ENT_QUOTES, 'UTF-8'); ?>" alt="Profile Photo" style="width: 40px; height: 40px; object-fit: cover;" />
+
+                                                            <img class="avatar-img avatar-sm rounded-circle" src="<?php echo htmlspecialchars($table_image_src); ?>" alt="<?php echo htmlspecialchars($row['staff_name']); ?>" style="width:36px; height:36px; object-fit:cover;">
+
                                                         <?php else: ?>
                                                             <div class="d-flex align-items-center justify-content-center rounded-circle bg-secondary text-white small fw-bold font-monospace" style="width:36px; height:36px; background-color: #6c757d !important;">
-                                                                <?php echo htmlspecialchars(strtoupper(substr($row['name'] ?? 'HR', 0, 2))); ?>
+                                                                <?php
+                                                                echo !empty($row['signature_initials'])
+                                                                    ? htmlspecialchars(strtoupper($row['signature_initials']))
+                                                                    : htmlspecialchars(strtoupper(substr($row['staff_name'], 0, 2)));
+                                                                ?>
                                                             </div>
                                                         <?php endif; ?>
                                                         <div>
-                                                            <p class="fw-semibold mb-0"><?php echo htmlspecialchars($row['name']); ?></p>
-                                                            <p class="text-muted small mb-0">Role: Security Administrator</p>
+                                                            <p class="fw-semibold mb-0"><?php echo htmlspecialchars($row['staff_name']); ?></p>
+                                                            <p class="text-muted small mb-0"><?php echo htmlspecialchars($row['department']); ?></p>
                                                         </div>
                                                     </div>
                                                 </td>
                                                 <td>
-                                                    <p class="mb-0 fw-semibold text-xs" style="font-size:13px;">
-                                                        <i class="bi bi-geo-alt"></i> <?php echo htmlspecialchars($row['branch']); ?>
+                                                    <code class="text-dark fw-mono font-monospace small"><?php echo htmlspecialchars($row['verification_id']); ?></code>
+                                                </td>
+                                                <td>
+                                                    <p class="mb-0 fw-semibold text-xs" style="font-size:13px;"><?php echo htmlspecialchars($row['destination']); ?></p>
+                                                    <p class="text-muted small mb-0" style="font-size:11px;"><i class="bi bi-geo-alt"></i> <?php echo htmlspecialchars($row['branch']); ?></p>
+                                                </td>
+                                                <td>
+                                                    <p class="text-truncate mb-0 small text-dark" style="max-width: 220px;" title="<?php echo htmlspecialchars($row['purpose_of_exit']); ?>">
+                                                        <?php echo htmlspecialchars($row['purpose_of_exit']); ?>
+                                                    </p>
+                                                    <p class="text-muted small mb-0 font-monospace" style="font-size:11px;">
+                                                        <i class="bi bi-clock"></i> <?php echo htmlspecialchars($row['time_out']); ?> → <?php echo htmlspecialchars($row['expected_time_in']); ?>
                                                     </p>
                                                 </td>
                                                 <td>
-                                                    <p class="mb-0 small text-dark"><i class="bi bi-envelope"></i> <?php echo htmlspecialchars($row['email']); ?></p>
-                                                    <p class="text-muted small mb-0 font-monospace" style="font-size:11px;"><i class="bi bi-telephone"></i> <?php echo htmlspecialchars($row['phone']); ?></p>
-                                                </td>
-                                                <td>
-                                                    <p class="mb-0 small text-dark font-monospace">
-                                                        <i class="bi bi-calendar-check"></i> <?php echo !empty($row['date_created']) ? date('Y-m-d', strtotime($row['date_created'])) : 'N/A'; ?>
-                                                    </p>
+                                                    <div class="mb-1"><?php echo $status_badge; ?></div>
+                                                    <?php if (!empty($row['hr_reviewed_by'])): ?>
+                                                        <p class="text-muted xx-small mb-0 tracking-tight" style="font-size:10px;" title="<?php echo htmlspecialchars($row['hr_remarks']); ?>">
+                                                            By: <?php echo htmlspecialchars($row['hr_reviewed_by']); ?>
+                                                        </p>
+                                                    <?php endif; ?>
                                                 </td>
                                                 <td class="text-end">
-                                                    <a class="btn btn-light btn-sm border" href="security-details?id=<?php echo base64_encode($row['id']); ?>">Edit Profile</a>
+                                                    <a class="btn btn-light btn-sm border" href="pass-details?id=<?php echo base64_encode($row['id']); ?>">View Log</a>
                                                 </td>
                                             </tr>
                                         <?php endforeach; ?>
                                     <?php else: ?>
                                         <tr>
-                                            <td colspan="5" class="text-center py-4 text-muted">
-                                                <i class="bi bi-people-fill fs-4 d-block mb-2"></i> No Security user records found in the directory.
+                                            <td colspan="6" class="text-center py-4 text-muted">
+                                                <i class="bi bi-folder-x fs-4 d-block mb-2"></i> No gate pass entries found in the workspace system.
                                             </td>
                                         </tr>
                                     <?php endif; ?>
@@ -418,9 +441,9 @@ $current_admin_role = $_SESSION['admin_role'];
 
                         <div class="d-flex flex-column flex-sm-row align-items-sm-center justify-content-between gap-3 mt-3">
                             <p class="text-muted small mb-0">
-                                Showing 1 to <?php echo count($security_table); ?> of <?php echo $total_records; ?> registered Security administrators
+                                Showing 1 to <?php echo count($gate_passes); ?> of <?php echo $total_records; ?> active log entries
                             </p>
-                            <nav aria-label="Security manager directory pagination hierarchy">
+                            <nav aria-label="Gate-pass pagination hierarchy">
                                 <ul class="pagination pagination-sm mb-0">
                                     <li class="page-item disabled"><a class="page-link" href="#">Previous</a></li>
                                     <li class="page-item active"><a class="page-link" href="#">1</a></li>

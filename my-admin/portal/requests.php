@@ -304,70 +304,78 @@ $current_admin_role = $_SESSION['admin_role'];
           <section class="row g-3 mt-1 align-items-stretch" aria-label="Dashboard metrics">
             <!-- Pending Approvals -->
             <div class="col-12 col-sm-6 col-xl-3 d-flex">
-              <article class="metric-card metric-primary w-full w-100 h-100 d-flex flex-column justify-content-between">
-                <div>
-                  <div class="metric-top">
-                    <span class="metric-label">Pending HR Review</span>
-                    <span class="metric-icon"><i class="bi bi-hourglass-split" aria-hidden="true"></i></span>
+              <a href="pending_passes" class="text-decoration-none w-100 d-flex text-dark" style="transition: transform 0.2s ease-in-out;" onmouseover="this.style.transform='translateY(-3px)'" onmouseout="this.style.transform='translateY(0)'">
+                <article class="metric-card metric-primary w-full w-100 h-100 d-flex flex-column justify-content-between">
+                  <div>
+                    <div class="metric-top">
+                      <span class="metric-label">Pending HR Review</span>
+                      <span class="metric-icon"><i class="bi bi-hourglass-split" aria-hidden="true"></i></span>
+                    </div>
+                    <div class="metric-value"><?php echo number_format($count_pending); ?></div>
                   </div>
-                  <div class="metric-value"><?php echo number_format($count_pending); ?></div>
-                </div>
-                <div class="metric-meta mt-auto">
-                  <span class="text-warning fw-semibold">Requires Action</span>
-                  <span>awaiting sign-off</span>
-                </div>
-              </article>
+                  <div class="metric-meta mt-auto">
+                    <span class="text-warning fw-semibold">Requires Action</span>
+                    <span>awaiting sign-off</span>
+                  </div>
+                </article>
+              </a>
             </div>
 
             <!-- Active Outside Personnel -->
             <div class="col-12 col-sm-6 col-xl-3 d-flex">
-              <article class="metric-card metric-success w-full w-100 h-100 d-flex flex-column justify-content-between">
-                <div>
-                  <div class="metric-top">
-                    <span class="metric-label">Active Passes (Out)</span>
-                    <span class="metric-icon"><i class="bi bi-box-arrow-right" aria-hidden="true"></i></span>
+              <a href="active_passes" class="text-decoration-none w-100 d-flex text-dark" style="transition: transform 0.2s ease-in-out;" onmouseover="this.style.transform='translateY(-3px)'" onmouseout="this.style.transform='translateY(0)'">
+                <article class="metric-card metric-success w-full w-100 h-100 d-flex flex-column justify-content-between">
+                  <div>
+                    <div class="metric-top">
+                      <span class="metric-label">Active Passes (Out)</span>
+                      <span class="metric-icon"><i class="bi bi-box-arrow-right" aria-hidden="true"></i></span>
+                    </div>
+                    <div class="metric-value"><?php echo number_format($count_active); ?></div>
                   </div>
-                  <div class="metric-value"><?php echo number_format($count_active); ?></div>
-                </div>
-                <div class="metric-meta mt-auto">
-                  <span class="text-success fw-semibold">Personnel Outside</span>
-                  <span>awaiting return check</span>
-                </div>
-              </article>
+                  <div class="metric-meta mt-auto">
+                    <span class="text-success fw-semibold">Personnel Outside</span>
+                    <span>awaiting return check</span>
+                  </div>
+                </article>
+              </a>
             </div>
 
             <!-- Approved/Completed Today -->
             <div class="col-12 col-sm-6 col-xl-3 d-flex">
-              <article class="metric-card metric-warning w-full w-100 h-100 d-flex flex-column justify-content-between">
-                <div>
-                  <div class="metric-top">
-                    <span class="metric-label">Total Logs Today</span>
-                    <span class="metric-icon"><i class="bi bi-journal-check" aria-hidden="true"></i></span>
+              <a href="today_logs" class="text-decoration-none w-100 d-flex text-dark" style="transition: transform 0.2s ease-in-out;" onmouseover="this.style.transform='translateY(-3px)'" onmouseout="this.style.transform='translateY(0)'">
+                <article class="metric-card metric-warning w-full w-100 h-100 d-flex flex-column justify-content-between">
+                  <div>
+                    <div class="metric-top">
+                      <span class="metric-label">Total Logs Today</span>
+                      <span class="metric-icon"><i class="bi bi-journal-check" aria-hidden="true"></i></span>
+                    </div>
+                    <div class="metric-value"><?php echo number_format($count_today); ?></div>
                   </div>
-                  <div class="metric-value"><?php echo number_format($count_today); ?></div>
-                </div>
-                <div class="metric-meta mt-auto">
-                  <span class="text-success fw-semibold">Live Feed</span>
-                  <span>registered today</span>
-                </div>
-              </article>
+                  <div class="metric-meta mt-auto">
+                    <span class="text-success fw-semibold">Live Feed</span>
+                    <span>registered today</span>
+                  </div>
+                </article>
+              </a>
             </div>
 
             <!-- Rejected / Flagged Requests -->
             <div class="col-12 col-sm-6 col-xl-3 d-flex">
-              <article class="metric-card metric-danger w-full w-100 h-100 d-flex flex-column justify-content-between">
-                <div>
-                  <div class="metric-top">
-                    <span class="metric-label">Declined / Revoked</span>
-                    <span class="metric-icon"><i class="bi bi-shield-x" aria-hidden="true"></i></span>
+              <a href="declined_passes" class="text-decoration-none w-100 d-flex text-dark" style="transition: transform 0.2s ease-in-out;" onmouseover="this.style.transform='translateY(-3px)'" onmouseout="this.style.transform='translateY(0)'">
+                <article class="metric-card metric-danger w-full w-100 h-100 d-flex flex-column justify-content-between">
+                  <div>
+                    <div class="metric-top">
+                      <span class="metric-label">Declined / Revoked</span>
+                      <span class="metric-icon"><i class="bi bi-shield-x" aria-hidden="true"></i></span>
+                    </div>
+                    <div class="metric-value"><?php echo number_format($count_declined); ?></div>
                   </div>
-                  <div class="metric-value"><?php echo number_format($count_declined); ?></div>
-                </div>
-                <div class="metric-meta mt-auto">
-                  <span class="text-danger fw-semibold">Security Flag</span>
-                  <span>failed verification</span>
-                </div>
-              </article>
+                  <div class="metric-meta mt-auto">
+                    <span class="text-danger fw-semibold">Security Flag</span>
+                    <span>failed verification</span>
+                  </div>
+                </article>
+              </a>
             </div>
           </section>
 
@@ -543,7 +551,7 @@ $current_admin_role = $_SESSION['admin_role'];
                           <?php endif; ?>
                         </td>
                         <td class="text-end">
-                          <a class="btn btn-light btn-sm border" href="pass-details.php?id=<?php echo base64_encode($row['id']); ?>">View Log</a>
+                          <a class="btn btn-light btn-sm border" href="pass-details?id=<?php echo base64_encode($row['id']); ?>">View Log</a>
                         </td>
                       </tr>
                     <?php endforeach; ?>

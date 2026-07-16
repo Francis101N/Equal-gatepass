@@ -288,6 +288,7 @@ session_start();
           $admin_name  = $_SESSION['admin_name'] ?? 'Admin Hasan';
           $admin_email = $_SESSION['admin_email'] ?? 'admin@example.com';
           $admin_role  = $_SESSION['admin_role'] ?? 'Product Administrator';
+          $admin_branch = $_SESSION['admin_branch'] ?? 'Head Office';
 
           $words = explode(' ', trim($admin_name));
           $initials = '';
@@ -327,6 +328,10 @@ session_start();
                   <div class="py-2 border-bottom d-flex justify-content-between">
                     <span class="text-muted small">Role</span>
                     <strong class="small"><?php echo htmlspecialchars($admin_role); ?></strong>
+                  </div>
+                  <div class="py-2 border-bottom d-flex justify-content-between">
+                    <span class="text-muted small">Branch</span>
+                    <strong class="small"><?php echo htmlspecialchars($admin_branch); ?></strong>
                   </div>
                   <div class="py-2 d-flex justify-content-between">
                     <span class="text-muted small">Status</span>
@@ -380,9 +385,15 @@ session_start();
                   </div>
 
                   <!-- Current Role Display (Immutable Field) -->
-                  <div class="col-12">
+                  <div class="col-md-6">
                     <label class="form-label small fw-semibold text-secondary" for="profileRoleDisplay">Current Role Privilege</label>
                     <input class="form-control bg-light text-muted" id="profileRoleDisplay" type="text" value="<?php echo htmlspecialchars(strtoupper($admin_role ?? 'Staff'), ENT_QUOTES, 'UTF-8'); ?>" readonly disabled>
+                  </div>
+
+                  <!-- Current Branch Display (Immutable Field) -->
+                  <div class="col-md-6">
+                    <label class="form-label small fw-semibold text-secondary" for="profileBranchDisplay">Current Branch</label>
+                    <input class="form-control bg-light text-muted" id="profileBranchDisplay" type="text" value="<?php echo htmlspecialchars($admin_branch ?? 'Head Office', ENT_QUOTES, 'UTF-8'); ?>" readonly disabled>
                   </div>
 
                   <!-- Divider for Password Management Section -->

@@ -12,7 +12,7 @@ try {
     ]);
 } catch (PDOException $e) {
     // If the database crashes, redirect back with an error message
-    header("Location: signin.html?error=" . urlencode("System database terminal connectivity failure."));
+    header("Location: index.php?error=" . urlencode("System database terminal connectivity failure."));
     exit;
 }
 
@@ -22,18 +22,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $password = $_POST['password'] ?? '';
 
     if (empty($email) || empty($password)) {
-        header("Location: signin.html?error=" . urlencode("Please fill out all login credentials."));
+        header("Location: index.php?error=" . urlencode("Please fill out all login credentials."));
         exit;
     }
 
     try {
         // 3. Query the Database for the Admin Record
         // (Assuming your users/admins table is called 'users' or 'admins' - update table name if needed)
-        $stmt = $pdo->prepare("SELECT id, name, email, password, role FROM admin WHERE email = ? LIMIT 1");
+        $stmt = $pdo->prepare("SELECT id, name, email, password, role , branch FROM admin WHERE email = ? LIMIT 1");
         $stmt->execute([$email]);
         $user = $stmt->fetch();
 
-        // 4. Verify Identity Profile Matrix
         // 4. Verify Identity Profile Matrix (Plain text verification)
         if ($user && $password === $user['password']) {
 
@@ -46,7 +45,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $_SESSION['admin_name']      = $user['name'];
             $_SESSION['admin_email']     = $user['email'];
             $_SESSION['admin_role']      = $user['role']; // e.g., 'HR', 'Security', 'Super Admin'
-
+            $_SESSION['admin_branch']    = $user['branch']; // e.g., 'Head Office', 'Regional Office'
             // Optional: Handle a basic cookie tracking state if 'Remember Me' is clicked
             if (isset($_POST['remember'])) {
                 setcookie("remember_admin_email", $email, time() + (86400 * 30), "/", "", true, true);
@@ -57,16 +56,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             exit;
         } else {
             // Generic security failure message prevents account harvesting
-            header("Location: signin.html?error=" . urlencode("Invalid email address or access password configuration."));
+            header("Location: index.php?error=" . urlencode("Invalid email address or access password ."));
             exit;
         }
     } catch (PDOException $e) {
         error_log("Database Execution Error: " . $e->getMessage());
-        header("Location: signin.html?error=" . urlencode("An unexpected internal system processing exception occurred."));
+        header("Location: index.php?error=" . urlencode("An unexpected internal system processing exception occurred."));
         exit;
     }
 } else {
     // If someone tries to browse directly to this URL, send them back to the login page
-    header("Location: signin.html");
+    header("Location: index.php");
     exit;
 }

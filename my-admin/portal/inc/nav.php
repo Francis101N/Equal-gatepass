@@ -19,22 +19,22 @@ $current_page = basename($_SERVER['SCRIPT_NAME']);
         <span class="nav-text">Requests</span>
     </a>
 
-    <?php if (isset($_SESSION['admin_role']) && $_SESSION['admin_role'] === 'hr'): ?>
+    <?php if (isset($_SESSION['admin_role']) && strtolower($_SESSION['admin_role']) === 'super admin'): ?>
+
         <a class="nav-link <?php echo ($current_page === 'hr.php') ? 'active' : ''; ?>"
             href="hr"
             <?php echo ($current_page === 'hr.php') ? 'aria-current="page"' : ''; ?>>
             <span class="nav-icon"><i class="bi bi-person-plus" aria-hidden="true"></i></span>
             <span class="nav-text">HR</span>
         </a>
-    <?php endif; ?>
 
-    <?php if (isset($_SESSION['admin_role']) && $_SESSION['admin_role'] === 'hr'): ?>
         <a class="nav-link <?php echo ($current_page === 'security.php') ? 'active' : ''; ?>"
             href="security"
             <?php echo ($current_page === 'security.php') ? 'aria-current="page"' : ''; ?>>
             <span class="nav-icon"><i class="bi bi-person-plus" aria-hidden="true"></i></span>
             <span class="nav-text">Security</span>
         </a>
+
     <?php endif; ?>
 
     <a class="nav-link <?php echo ($current_page === 'profile.php') ? 'active' : ''; ?>"

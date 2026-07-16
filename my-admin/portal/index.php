@@ -79,7 +79,17 @@
                 <h1 class="h4 fw-bold mb-1">Welcome Back</h1>
                 <p class="text-muted small">Gate-Pass Terminal Admin Management Portal</p>
             </div>
+            <?php if (isset($_GET['error']) && !empty($_GET['error'])): ?>
+                <div class="alert alert-danger border border-danger-subtle bg-danger-subtle rounded-4 mb-4" role="alert">
+                    <h6 class="fw-bold text-uppercase mb-2">
+                        Sign In Failed
+                    </h6>
 
+                    <p class="mb-0">
+                        <?php echo htmlspecialchars($_GET['error']); ?>
+                    </p>
+                </div>
+            <?php endif; ?>
             <!-- Sign In Form -->
             <form id="adminSignInForm" method="POST" action="login_process.php" novalidate>
                 <!-- Email Input -->

@@ -314,7 +314,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && empty($error_message)) {
                                 <table border='0' cellpadding='0' cellspacing='0' width='100%'>
                                     <tr>
                                         <td align='center' style='padding-top: 4px;'>
-                                            <a href='https://yourdomain.com/admin/dashboard' target='_blank' style='display: block; width: 100%; box-sizing: border-box; background-color: #df2d45; color: #ffffff; text-align: center; padding: 14px 16px; font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; text-decoration: none; border-radius: 8px; font-family: sans-serif;'>
+                                            <a href='http://localhost/gate-pass/my-admin/portal/' target='_blank' style='display: block; width: 100%; box-sizing: border-box; background-color: #df2d45; color: #ffffff; text-align: center; padding: 14px 16px; font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; text-decoration: none; border-radius: 8px; font-family: sans-serif;'>
                                                 Open Management Console
                                             </a>
                                         </td>

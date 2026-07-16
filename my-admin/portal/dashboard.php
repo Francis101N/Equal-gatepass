@@ -235,35 +235,111 @@ $current_admin_role = $_SESSION['admin_role'];
           </div>
 
           <?php
-          // 1. Include database structural parameters
+          // 1. Include database connection
           include 'inc/conn.php';
 
           try {
-            // 2. Instantiate PDO layer connection mapping parameters
-            $pdo = new PDO("mysql:host=$host;dbname=$db_name;charset=utf8mb4", $username, $password, [
-              PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
-              PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-              PDO::ATTR_EMULATE_PREPARES => false,
-            ]);
 
-            // 3. Count Pending HR Reviews (Assuming status = 'pending')
-            $stmt_pending = $pdo->query("SELECT COUNT(*) FROM gate_passes WHERE approval_status = 'PENDING'");
-            $count_pending = $stmt_pending->fetchColumn();
+            // Database connection
+            $pdo = new PDO(
+              "mysql:host=$host;dbname=$db_name;charset=utf8mb4",
+              $username,
+              $password,
+              [
+                PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+                PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+                PDO::ATTR_EMULATE_PREPARES => false,
+              ]
+            );
 
-            // 4. Count Active Passes Out (Personnel currently outside who have NOT checked back in yet)
-            $stmt_active = $pdo->query("SELECT COUNT(*) FROM gate_passes WHERE time_out IS NOT NULL AND time_out != '' AND (expected_time_in IS NULL OR expected_time_in = '')");
-            $count_active = $stmt_active->fetchColumn();
+            // Logged in user's role and branch
+            $adminRole   = strtolower($_SESSION['admin_role'] ?? '');
+            $adminBranch = trim($_SESSION['admin_branch'] ?? '');
 
-            // 5. Count Total Logs Registered Today (Filter logs by current server date)
-            $stmt_today = $pdo->query("SELECT COUNT(*) FROM gate_passes WHERE DATE(date_created) = CURRENT_DATE");
-            $count_today = $stmt_today->fetchColumn();
+            // Super Admin can see everything
+            if ($adminRole === 'super admin') {
 
-            // 6. Count Declined / Revoked Passes (Assuming status = 'declined' or 'rejected')
-            $stmt_declined = $pdo->query("SELECT COUNT(*) FROM gate_passes WHERE approval_status = 'Declined'");
-            $count_declined = $stmt_declined->fetchColumn();
+              // Pending HR Reviews
+              $stmt = $pdo->query("
+            SELECT COUNT(*)
+            FROM gate_passes
+            WHERE approval_status = 'PENDING'
+        ");
+              $count_pending = $stmt->fetchColumn();
+
+              // Active Passes
+              $stmt = $pdo->query("
+            SELECT COUNT(*)
+            FROM gate_passes
+            WHERE time_out IS NOT NULL
+            AND time_out != ''
+            AND (expected_time_in IS NULL OR expected_time_in = '')
+        ");
+              $count_active = $stmt->fetchColumn();
+
+              // Today's Logs
+              $stmt = $pdo->query("
+            SELECT COUNT(*)
+            FROM gate_passes
+            WHERE DATE(date_created)=CURRENT_DATE
+        ");
+              $count_today = $stmt->fetchColumn();
+
+              // Declined
+              $stmt = $pdo->query("
+            SELECT COUNT(*)
+            FROM gate_passes
+            WHERE approval_status='Declined'
+        ");
+              $count_declined = $stmt->fetchColumn();
+            } else {
+
+              // Pending HR Reviews (Branch Only)
+              $stmt = $pdo->prepare("
+            SELECT COUNT(*)
+            FROM gate_passes
+            WHERE approval_status='PENDING'
+            AND branch=:branch
+        ");
+              $stmt->execute(['branch' => $adminBranch]);
+              $count_pending = $stmt->fetchColumn();
+
+              // Active Passes (Branch Only)
+              $stmt = $pdo->prepare("
+            SELECT COUNT(*)
+            FROM gate_passes
+            WHERE branch=:branch
+            AND time_out IS NOT NULL
+            AND time_out!=''
+            AND (expected_time_in IS NULL OR expected_time_in='')
+        ");
+              $stmt->execute(['branch' => $adminBranch]);
+              $count_active = $stmt->fetchColumn();
+
+              // Today's Logs (Branch Only)
+              $stmt = $pdo->prepare("
+            SELECT COUNT(*)
+            FROM gate_passes
+            WHERE branch=:branch
+            AND DATE(date_created)=CURRENT_DATE
+        ");
+              $stmt->execute(['branch' => $adminBranch]);
+              $count_today = $stmt->fetchColumn();
+
+              // Declined (Branch Only)
+              $stmt = $pdo->prepare("
+            SELECT COUNT(*)
+            FROM gate_passes
+            WHERE approval_status='Declined'
+            AND branch=:branch
+        ");
+              $stmt->execute(['branch' => $adminBranch]);
+              $count_declined = $stmt->fetchColumn();
+            }
           } catch (Exception $e) {
+
             error_log("Dashboard Counter Core Aggregation Error: " . $e->getMessage());
-            // Fallbacks to prevent application crashes on view load
+
             $count_pending  = 0;
             $count_active   = 0;
             $count_today    = 0;
@@ -359,23 +435,53 @@ $current_admin_role = $_SESSION['admin_role'];
             ]);
 
             // 2. Fetch the top 5 most recent gate-pass requests
-            $log_sql = "SELECT 
+            $admin_branch = $_SESSION['admin_branch'] ?? '';
+            $admin_role   = strtolower($_SESSION['admin_role'] ?? '');
+
+            if ($admin_role === 'super admin') {
+
+              $log_sql = "SELECT
                     id,
-                    passport_photo_url, 
-                    staff_name, 
-                    email, 
-                    department, 
-                    branch, 
-                    pass_date, 
-                    destination, 
-                    purpose_of_exit, 
+                    passport_photo_url,
+                    staff_name,
+                    email,
+                    department,
+                    branch,
+                    pass_date,
+                    destination,
+                    purpose_of_exit,
                     signature_initials,
-                    approval_status -- If this column doesn't exist yet, it defaults to 'Pending' in the catch block
-                FROM gate_passes 
-                ORDER BY id DESC 
+                    approval_status
+                FROM gate_passes
+                ORDER BY id DESC
                 LIMIT 5";
 
-            $log_stmt = $pdo->query($log_sql);
+              $log_stmt = $pdo->query($log_sql);
+            } else {
+
+              $log_sql = "SELECT
+                    id,
+                    passport_photo_url,
+                    staff_name,
+                    email,
+                    department,
+                    branch,
+                    pass_date,
+                    destination,
+                    purpose_of_exit,
+                    signature_initials,
+                    approval_status
+                FROM gate_passes
+                WHERE branch = :branch
+                ORDER BY id DESC
+                LIMIT 5";
+
+              $log_stmt = $pdo->prepare($log_sql);
+              $log_stmt->execute([
+                ':branch' => $admin_branch
+              ]);
+            }
+
             $recent_passes = $log_stmt->fetchAll();
           } catch (PDOException $e) {
             // Fallback: If the table structure query fails (e.g. if 'approval_status' column is missing), handle gracefully

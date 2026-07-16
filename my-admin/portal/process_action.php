@@ -88,7 +88,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } else {
 
         // --- HR / MANAGEMENT PIPELINE ---
-        $approval_status = isset($_POST['approved_status']) ? trim($_POST['approved_status']) : '';
+        $approval_status = isset($_POST['approval_status']) ? trim($_POST['approval_status']) : '';
         $hr_reviewed_by  = isset($_POST['hr_reviewed_by']) ? trim($_POST['hr_reviewed_by']) : '';
         $hr_remarks      = isset($_POST['hr_remarks']) ? trim($_POST['hr_remarks']) : '';
 

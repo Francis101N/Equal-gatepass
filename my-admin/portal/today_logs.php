@@ -256,21 +256,107 @@ $current_admin_role = $_SESSION['admin_role'];
                     include('inc/conn.php');
 
                     try {
-                        $pdo = new PDO("mysql:host=$host;dbname=$db_name;charset=utf8mb4", $username, $password, [
-                            PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
-                            PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-                            PDO::ATTR_EMULATE_PREPARES => false,
-                        ]);
+                        $pdo = new PDO(
+                            "mysql:host=$host;dbname=$db_name;charset=utf8mb4",
+                            $username,
+                            $password,
+                            [
+                                PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+                                PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+                                PDO::ATTR_EMULATE_PREPARES => false,
+                            ]
+                        );
 
-                        // 2. Query Total Count for Database Summary Analytics
-                        $total_stmt = $pdo->query("SELECT COUNT(*) FROM gate_passes WHERE DATE(date_created) = CURRENT_DATE");
-                        $total_records = $total_stmt->fetchColumn();
+                        // Logged-in user's role and branch
+                        $adminRole   = strtolower($_SESSION['admin_role'] ?? '');
+                        $adminBranch = trim($_SESSION['admin_branch'] ?? '');
 
-                        // 3. Fetch Gate Pass Logs (ordered by newest additions first)
-                        $stmt = $pdo->query("SELECT id, verification_id, passport_photo_url, staff_name, department, pass_date, destination, branch, purpose_of_exit, time_out, expected_time_in, signature_initials, approval_status, hr_reviewed_by, hr_remarks, date_created FROM gate_passes WHERE DATE(date_created) = CURRENT_DATE ORDER BY date_created DESC");
+                        if ($adminRole === 'super admin') {
+
+                            // Total records created today
+                            $total_stmt = $pdo->query("
+            SELECT COUNT(*)
+            FROM gate_passes
+            WHERE DATE(date_created) = CURRENT_DATE
+        ");
+                            $total_records = $total_stmt->fetchColumn();
+
+                            // Fetch today's records
+                            $stmt = $pdo->query("
+            SELECT
+                id,
+                verification_id,
+                passport_photo_url,
+                staff_name,
+                department,
+                pass_date,
+                destination,
+                branch,
+                purpose_of_exit,
+                time_out,
+                expected_time_in,
+                signature_initials,
+                approval_status,
+                hr_reviewed_by,
+                hr_remarks,
+                date_created
+            FROM gate_passes
+            WHERE DATE(date_created) = CURRENT_DATE
+            ORDER BY date_created DESC
+        ");
+                        } else {
+
+                            // Total records created today for the user's branch
+                            $total_stmt = $pdo->prepare("
+            SELECT COUNT(*)
+            FROM gate_passes
+            WHERE branch = :branch
+            AND DATE(date_created) = CURRENT_DATE
+        ");
+
+                            $total_stmt->execute([
+                                'branch' => $adminBranch
+                            ]);
+
+                            $total_records = $total_stmt->fetchColumn();
+
+                            // Fetch today's records for the user's branch
+                            $stmt = $pdo->prepare("
+            SELECT
+                id,
+                verification_id,
+                passport_photo_url,
+                staff_name,
+                department,
+                pass_date,
+                destination,
+                branch,
+                purpose_of_exit,
+                time_out,
+                expected_time_in,
+                signature_initials,
+                approval_status,
+                hr_reviewed_by,
+                hr_remarks,
+                date_created
+            FROM gate_passes
+            WHERE branch = :branch
+            AND DATE(date_created) = CURRENT_DATE
+            ORDER BY date_created DESC
+        ");
+
+                            $stmt->execute([
+                                'branch' => $adminBranch
+                            ]);
+                        }
+
                         $gate_passes = $stmt->fetchAll();
                     } catch (PDOException $e) {
-                        echo "<div class='alert alert-danger'>Database Terminal Connectivity Error: " . htmlspecialchars($e->getMessage()) . "</div>";
+
+                        echo "<div class='alert alert-danger'>Database Terminal Connectivity Error: " .
+                            htmlspecialchars($e->getMessage()) .
+                            "</div>";
+
                         $gate_passes = [];
                         $total_records = 0;
                     }
